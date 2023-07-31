@@ -18,11 +18,11 @@ local states = {
 }
 
 local state_func_map = {
-	-1 = nil,
-	0 = nil,
-	1 = nil,
-	2 = nil,
-	3 = nil,
+	[states.game_end] = game_end_loop,
+	[states.initializing] = nil,
+	[states.waiting_players] = waiting_players_loop,
+	[states.choosing_base] = choosing_base_loop,
+	[states.playing] = playing_loop,
 }
 
 
@@ -62,7 +62,7 @@ function M.match_join(context, dispatcher, tick, state, presences)
 		state.presences[presence.session_id] = presence
 	end
 
-	if #state.presences > 1 and countdown = -1 then
+	if #state.presences > 1 and countdown == -1 then
 		countdown = rules.waiting_time
 	end
 
@@ -95,13 +95,13 @@ end
 
 function M.match_loop(context, dispatcher, tick, state, messages)
 
-	if state.game_state = game_states.initializing then
+	if state.game_state == game_states.initializing then
 		return state
 	end
 
 	if countdown > 0 then
 		state_func_map[state.game_state](context, dispatcher, tick, state, messages)
-		countdown -= 1
+		countdown = countdown - 1
 	end
 	
 	if countdown <= 0 then
@@ -111,7 +111,7 @@ function M.match_loop(context, dispatcher, tick, state, messages)
 	local encoded = nk.json_encode(state)
 
 	dispatcher.broadcast_message(OpCodes.update_game_state, encoded)
-	
+
 	return state
 end
 
@@ -122,18 +122,18 @@ end
 function timeout(context, dispatcher, tick, state, messages)
 
 	local timeout_func = {
-		game_states.game_end = function ()
+		[game_states.game_end] = function ()
 			state = nil
 		end,
-		game_states.waiting_players = function ()
+		[game_states.waiting_players] = function ()
 			state.game_state = game_states.game_end
 			state.countdown = rules.end_closing_time
 		end,
-		game_states.choosing_base = function ()
+		[game_states.choosing_base] = function ()
 			state.game_state = game_states.playing
 			state.countdown = rules.round_time
 		end,
-		game_states.playing = function ()
+		[game_states.playing] = function ()
 			if state.round < rules.rounds then
 				state.game_state = game_states.choosing_base
 				state.countdown = rules.choosing_base
@@ -163,7 +163,7 @@ end
 function choosing_base_loop(context, dispatcher, tick, state, messages)
 
 	local commands = {
-		OpCodes.select_base = function(sender, data, state, dispatcher)
+		[OpCodes.select_base] = function(sender, data, state, dispatcher)
 			players_base[sender.session_id] = data.base
 		end,
 	}
