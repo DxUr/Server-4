@@ -25,7 +25,11 @@ local function makematch(context, matched_users)
   return matchid
 end
 
-nk.register_matchmaker_matched(makematch)
+--nk.register_matchmaker_matched(makematch)
+nk.register_matchmaker_matched(function(context, matched_users)
+  local match_id = nk.match_create("1v1_match", { invited = matched_users })
+  return match_id
+end)
 
 nk.register_rt_before(matchmaker_add, "MatchmakerAdd")
 
