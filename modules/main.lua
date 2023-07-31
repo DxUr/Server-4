@@ -13,7 +13,7 @@ local function makematch(context, matched_users)
   -- print matched users
   for _, user in ipairs(matched_users) do
     local presence = user.presence
-    nk.logger_info(("Matched user '%s' named '%s'"):format(presence.user_id, presence.username))
+    -- nk.logger_info(("Matched user '%s' named '%s'"):format(presence.user_id, presence.username))
     for k, v in pairs(user.properties) do
       nk.logger_info(("Matched on '%s' value '%s'"):format(k, v))
     end
